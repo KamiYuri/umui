@@ -1,0 +1,33 @@
+variables:
+    GIT_STRATEGY: none
+    GIT_CHECKOUT: "false"
+stages:
+    # - build
+    - deploy
+
+# build:
+#   stage: build
+#   before_script:
+#     - cd $CI_PROJECT_DIR
+#   script:
+#     - npm install
+#   tags:
+#     - UTM
+
+deploy:
+    stage: deploy
+    # image: utm-manager:0.8.9
+    # before_script:
+    #     - mkdir -p ~/.ssh
+    #     - eval $(ssh-agent -s)
+    #     - 'echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config'
+    script:
+        # - ssh-add <(echo "$SSH_PRIVATE_KEY" | tr -d '\r') 
+        - ssh -p 22 dis@10.10.6.183 'cd /utm/umui && git fetch && git pull origin main && npm start'
+        # && cp src/utils/html2canvas.min.js wui/js/
+        # - sudo systemctl restart utm-web
+    tags:
+        - UTM
+
+    environment:
+        name: production

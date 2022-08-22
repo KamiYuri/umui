@@ -1,0 +1,296 @@
+<template>
+  <div class="app-container user-management">
+    <div class="filter-container">
+      <el-button style="float: right; margin-left: 10px;" class="filter-item float-right" @click="exportCSV($refs.elTable, 'node-list')">
+        {{ $t('table.export-csv') }}
+      </el-button>
+      <el-button style="float: right;" class="filter-item float-right" @click="exportXLS($refs.elTable, 'node-list')">
+        {{ $t('table.export-xls') }}
+      </el-button>
+    </div>
+
+    <el-table
+      :key="tableKey"
+      v-loading="listLoading"
+      :data="list"
+      fit
+      stripe
+      style="width: 100%;"
+      @sort-change="sortChange"
+      ref='elTable'
+    >
+      <el-table-column :label="$t('table.idObject')" sortable prop="idObject" align="center">
+        <template slot-scope="scope">
+          <span>{{ scope.row.idObject }}</span>
+        </template>
+      </el-table-column>      
+      <el-table-column :label="$t('table.name')" sortable prop="name" align="center">
+        <template slot-scope="scope">
+          <span class='link-type' @click="handleUpdate(scope.row)">{{ scope.row.name }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column :label="$t('table.description')" sortable prop="description" align="center">
+        <template slot-scope="scope">
+          <span>{{ scope.row.description }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column :label="$t('table.hostname')" sortable prop="specs" align="center">
+        <template slot-scope="scope">
+          <span>{{ scope.row.specs.hostname }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column :label="$t('table.port')" sortable prop="specs" align="center">
+        <template slot-scope="scope">
+          <span>{{ scope.row.specs.port }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column :label="$t('table.actions')" fixed="right" align="center" width="250px" class-name="small-padding">
+        <template slot-scope="{row}">
+          <el-button type="primary" icon="el-icon-edit-outline" class="w-auto" size="mini" :disabled="!row.idObject" @click="$router.push({name: 'NodeRuleset', params: {idObject: row.idObject}})" :title="$t('route.rules_management')">
+          </el-button>
+          <el-button type="primary" size="mini" @click="handleDetail(row)" :title="$t('table.edit')">
+            <svg-icon icon-class="eye-open" />
+          </el-button>
+          <el-button type="danger" icon="el-icon-delete" size="mini" :title="$t('table.delete')" @click="handleDelete(row)">
+          </el-button>
+        </template>
+      </el-table-column>
+    </el-table>
+
+    <pagination v-show="total>0" :total="total" :page.sync="params.page" :limit.sync="params.limit" @pagination="getList" />
+    <DialogIps :objectCanView="rowCanView" v-if="!isEmpty(rowCanView)" :dialogVisible="dialogVisible" @close="handleClose" @detail="detailIps"></DialogIps>
+
+    <el-dialog :title="textMap[dialogStatus]" :visible.sync="dialogFormVisible" @close="resetError()">
+      <el-form ref="dataFormSingle" :model="temp" label-position="left" label-width="100px" style="width: 100%">
+        <el-form-item :label="$t('table.name')" prop="name">
+          <el-input v-model="temp.name"
+                    tabindex="1"
+                    @focus="resetError"
+                    name="name"
+                    :placeholder="$t('table.name')"
+                    :class="{ error: errors.has('name') }"
+                    data-vv-validate-on="none"
+                    v-validate="'required|min:2|max:255'"  />
+          <div class="el-form-item__error" v-if="errors.has('name')">
+            {{ errors.first('name') }}
+          </div>
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="dialogFormVisible = false">
+          {{ $t('table.cancel') }}
+        </el-button>
+        <el-button type="primary" @click="updateData()">
+          {{ $t('table.confirm') }}
+        </el-button>
+      </div>
+    </el-dialog>
+  </div>
+</template>
+
+<script>
+import waves from '@/directive/waves' // waves directive
+import Pagination from '@/components/Pagination' // secondary package based on el-pagination
+import rf from 'requestfactory'
+import { Message } from 'element-ui'
+import RemoveErrorsMixin from 'common/RemoveErrorsMixin'
+import Exporter from 'common/Exporter';
+import { statusDeduce } from '../../utils'
+import DialogIps from './DialogIps'
+import { isEmpty, cloneDeep } from 'lodash'
+
+export default {
+  name: 'IpsList',
+  components: {
+    Pagination,
+    DialogIps
+  },
+  directives: { waves },
+  mixins: [RemoveErrorsMixin, Exporter],
+  data() {
+    return {
+      tableKey: 0,
+      list: null,
+      total: 0,
+      listLoading: true,
+      params: {
+        page: 1,
+        limit: 20,
+        key: undefined,
+        status: undefined,
+        sort: 'updated_at',
+        order: 'desc'
+      },
+      temp: {
+        name: ''
+      },
+      dialogFormVisible: false,
+      dialogStatus: '',
+      textMap: {
+        update: this.$t('table.edit'),
+        create: this.$t('table.create'),
+        upload: this.$t('upload.title')
+      },
+      fileList: [],
+      isSubmitting: false,
+      rowCanView: {},
+      dialogVisible: false
+    }
+  },
+  async mounted() {    
+    await this.getList();
+  },
+  methods: {    
+    getList() {
+      rf.getRequest('ContainmentRelRequest').getIpsList(this.params)
+      .then(async response => {        
+        this.list = response.map(item => ({
+          ...item,
+          specs: JSON.parse(item.specs)
+        }))
+        this.total = response.length
+      })
+      .catch(error => {
+        console.log(error)
+        this.errors.add({field: 'error', msg: error.response.data.message});
+        Message.error(this.$t(this.errors.first('error')) || this.$t('auth.unknowError'))
+      })
+      .finally(() => this.listLoading = false)
+    },
+    handleRefreshTable() {
+      this.listLoading = true
+      this.params.page = 1
+      this.getList()
+    },
+    sortChange(data) {
+      const { prop, order } = data
+        this.sortBy(prop, order)
+    },
+    getSortClass: function() {
+      const order = this.params.order
+      return order === `asc`
+      ? 'ascending'
+      : order === `desc`
+      ? 'descending'
+      : ''
+    },
+    sortBy(col, order) {
+      this.params.sort = col
+      if (order === 'ascending') {
+        this.params.order = 'asc'
+      } else {
+        this.params.order = 'desc'
+      }
+      this.handleFilter()
+    },
+    handleFilter() {
+      this.params.page = 1
+      this.getList()
+    },
+    handleError(error) {
+      this.convertRemoteErrors(error);
+      if (this.errors.has('error')) {
+        this.errors.add({field: 'error', msg: error.response.data.message});
+        Message.error(this.$t(this.errors.first('error')) || this.$t('auth.unknowError'))
+      }
+    },
+    resetTemp() {
+      this.temp = {
+        name: ''
+      }
+    },
+    handleUpdate(row) {
+      row = {
+        ...row
+      }
+      this.temp = Object.assign({}, row) // copy obj
+      this.dialogStatus = 'update'
+      this.dialogFormVisible = true
+      this.rowCanView = row
+    },
+    isEmpty(value) {
+      return !!isEmpty(value)
+    },
+    async handleDetail(row) {
+      rf.getRequest('ContainmentRelRequest').checkHostStatus(row.idObject)
+        .then(res => {
+          const status = statusDeduce(res) || status;
+          const serviceStates = JSON.parse(res.data);
+
+          this.rowCanView = {
+            ...row,
+            idContainer: row.idObject,
+            children: [],
+            name: row.name || row.idContainee,
+            description: row.description,
+            status,
+            serviceStates,
+            online: res.online || false,
+            enabled: res.enabled || false
+          }
+        }).then(() => {
+          this.dialogVisible = true
+        }).catch(error => {
+          this.errors.add({field: 'error', msg: ((error.response || {}).data || {}).message || error.message});
+          Message.error(this.$t(this.errors.first('error')) || this.$t('auth.unknowError'))
+        })
+    },
+    async updateData() {
+      this.resetError();
+      if (this.isSubmitting) {
+        return;
+      }
+      await this.$validator.validate('name');
+      if (this.errors.any()) {
+        return;
+      }
+      let params = cloneDeep(this.temp)
+      rf.getRequest('ContainmentRelRequest').update(this.rowCanView.idObject, params)
+      .then(() => {
+        this.dialogFormVisible = false
+        this.$notify({
+          title: this.$t('notify.success.label'),
+          message: this.$t('notify.success.updateSuccess'),
+          type: 'success',
+          duration: 1000,
+          showClose: false
+        })
+        this.handleRefreshTable()
+      }).catch(error => {
+        this.errors.add({field: 'error', msg: ((error.response || {}).data || {}).message || error.message});
+        Message.error(this.$t(this.errors.first('error')) || this.$t('auth.unknowError'))
+      })
+    },
+    handleDelete(row) {
+      this.$confirm(this.$t('notify.text.delete'), 'Warning', {
+        confirmButtonText: this.$t('action.ok'),
+        cancelButtonText: this.$t('action.cancel'),
+        type: 'warning',
+        center: true
+      }).then(() => {
+        rf.getRequest('ContainmentRelRequest').delete(row.idObject)
+          .then(() => {
+            this.$message({
+              type: 'success',
+              message: this.$t('notify.success.deleteSuccess')
+            })
+            this.handleRefreshTable()
+          })
+      }).catch(() => {
+        this.$message({
+          type: 'info',
+          message: this.$t('notify.info.cancel'),
+        });
+      });
+    },
+    handleClose () {
+      this.dialogVisible = false
+      this.rowCanView = {}
+    },
+    detailIps () {
+      this.dialogVisible = false
+      this.$router.push({ name: 'Monitoring' });
+    }
+  },
+}
+</script>

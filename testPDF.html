@@ -1,0 +1,28 @@
+<html>
+<script src=" https://utm07.duckdns.org/wui/js/html2canvas.min.js"></script>
+<script language="javascript">
+function converHTMLFileToPDF() {
+	const { jsPDF } = window.jspdf;
+	var doc = new jsPDF('l', 'mm', [1200, 1210]);
+
+	var pdfjs = document.querySelector('/intrusion/monitoring');
+
+	// Convert HTML to PDF in JavaScript
+	doc.html(pdfjs, {
+		callback: function(doc) {
+			doc.save("output.pdf");
+		},
+		x: 10,
+		y: 10
+	});
+}
+</script>
+
+<body>
+     <button onclick="myFunction()">To PDF</button> 
+
+ <iframe id="/intrusion/monitoring" src="https://utm07.duckdns.org/goto/1c43b5784095f1b9805bebe7611945fb?security_tenant=private" class="frame"></iframe>  
+
+</body>
+</html>
+
