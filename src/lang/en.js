@@ -9,6 +9,7 @@
     node_management: 'Node Management',
     permission_management: 'Permission Management',
     rules_management: 'Rules Management',
+    firewalls_management: 'Firewalls Management',
     roles_of_user: 'Roles of User',
     users_of_role: 'Users of Role',
     user_list: 'User List',
