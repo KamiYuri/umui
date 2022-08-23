@@ -23,9 +23,9 @@ export default {
   //   Statistics
   // },
   computed: {
-    // cachedViews() {
-    //   return this.$store.state.tagsView.cachedViews;
-    // },
+    cachedViews() {
+      return this.$store.state.tagsView.cachedViews;
+    },
     key() {
       return this.$route.path;
     },

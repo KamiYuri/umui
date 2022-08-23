@@ -161,7 +161,7 @@ export const asyncRoutes = [
       },
     ]
   },
-  {
+  { 
     path: '/rules-management',
     component: Layout,
     redirect: '/rules-management/ruleset',
@@ -169,6 +169,96 @@ export const asyncRoutes = [
     name: 'RuleManagement',
     meta: {
       title: 'rules_management',
+      icon: 'rules-management',
+      roles: ['admin', 'superadmin'] // you can set roles in root nav
+    },
+    children: [
+      {
+        path: 'hostips-ruleset',
+        component: artifactFn({application: 'modsec', fileExt: 'zip'}),
+        //component: () => import('@/views/rules-management/artifact'),
+        name: 'HostRuleset',
+        meta: {
+          icon: 'ruleset',
+          title: 'modsec_ruleset',
+          roles: ['admin', 'superadmin']
+        }
+      },
+      {
+        path: 'netips-ruleset',
+        component: artifactFn({application: 'idssystem', fileExt: 'zip'}),
+        name: 'NetRuleset',
+        meta: {
+          icon: 'ruleset',
+          title: 'suricata_ruleset',
+          roles: ['admin', 'superadmin']
+        }
+      },
+      {
+        path: 'deepinspector',
+        component: artifactFn({application: 'deepinspector', fileExt: 'zip'}),
+        name: 'PredictionModels',
+        meta: {
+          icon: 'anomalies',
+          title: 'prediction_models',
+          roles: ['admin', 'superadmin']
+        }
+      },      
+      
+      {
+        path: 'blacklisting',
+        //component: () => import('@/views/rules-management/specifics'),
+        component: artifactFn({application: 'blacklisting', fileExt: 'sql'}),
+        name: 'Specifics',
+        meta: {
+          icon: 'specifics',
+          title: 'blacklisting',
+          roles: ['admin', 'superadmin']
+        }
+      },
+      // {
+      //   path: 'virtualpatching',
+      //   //component: () => import('@/views/rules-management/specifics'),
+      //   component: artifactFn({application: 'virtualpatching', fileExt: 'sql'}),
+      //   name: 'VirtualPatching',
+      //   meta: {
+      //     icon: 'specifics',
+      //     title: 'virtualpatching',
+      //     roles: ['admin', 'superadmin']
+      //   }
+      // },
+      {
+        path: 'malwarebehavior',
+        //component: () => import('@/views/rules-management/specifics'),
+        component: artifactFn({application: 'malwarebehavior', fileExt: 'sql'}),
+        name: 'MalwareBehavior',
+        meta: {
+          icon: 'specifics',
+          title: 'malwarebehavior',
+          roles: ['admin', 'superadmin']
+        }
+      },
+      {
+        path: 'node/:idObject',
+        hidden: true,
+        name: 'NodeRuleset',
+        props: true,
+        component: () => import('@/views/rules-management/node-ruleset'),
+        meta: {
+          title: 'nodeRulesetTitle',
+          roles: ['admin', 'superadmin']
+        }
+      },
+    ]
+  },
+  { 
+    path: '/firewalls-management',
+    component: Layout,
+    redirect: '/rules-management/ruleset',
+    alwaysShow: true,
+    name: 'FirewallsManagement',
+    meta: {
+      title: 'firewalls_management',
       icon: 'rules-management',
       roles: ['admin', 'superadmin'] // you can set roles in root nav
     },
