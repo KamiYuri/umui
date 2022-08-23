@@ -1,3 +1,5 @@
+import { reject } from 'lodash';
+import { resolve } from 'path';
 import BaseModelRequest from './base/BaseModelRequest';
 
 export default class AuthRequest extends BaseModelRequest {
@@ -7,17 +9,24 @@ export default class AuthRequest extends BaseModelRequest {
   }
 
   login(username, password) {
+    // var params = {
+    //   username: "t07", //username,
+    //   password: "t07@2022" //password,
+    // }
+    // var res = this.postTo('https://utm07.duckdns.org/auth/login', params);
+    // console.log("Login to Dashboard: " + res);
     var params = {
-      username: "t07", //username,
-      password: "t07@2022" //password,
-    }
-    var res = this.postTo('https://utm07.duckdns.org/auth/login', params);
-    console.log("Login to Dashboard: " + res);
-    params = {
       username: username,
       password: password,
     }
-    return this.post('/login/', params);
+    // return this.post('/login/', params);
+    return new Promise(resolve => {
+      const res = {
+        "username": "admin",
+        "password": "4725a1ae5331e9ebd6624b70912bcbd4c4102eedde1b0d372f7704feef5cdee4"
+      }
+      resolve(res)
+    })
   }
 
   logout() {
@@ -43,16 +52,31 @@ export default class AuthRequest extends BaseModelRequest {
 
   getCurrentUser(params) {
     return new Promise((resolve, reject) => {
-      let url = '/users/current';
-      var self = this;
-      this.get(url, params)
-          .then(function (res) {
-            self.res = res;
-            resolve(res);
-          })
-          .catch(function (error) {
-            reject(error);
-          });
+    //   let url = '/users/current';
+    //   var self = this;
+    //   this.get(url, params)
+    //       .then(function (res) {
+    //         self.res = res;
+    //         resolve(res);
+    //       })
+    //       .catch(function (error) {
+    //         reject(error);
+    //       });
+        const res = { 
+          "idUser": 1,
+          "username": "admin",
+          "roles": [
+              {
+                  "idUserrolerel": 1,
+                  "idRole": 1,
+                  "roleName": "superadmin",
+                  "roleDescription": "Can do anything",
+                  "idUser": 1,
+                  "username": "admin"
+              }
+          ]
+        }
+        resolve(res)
     });
   }
 
