@@ -94,8 +94,3 @@ export default {
   }
 }
 </script>
-
-export default {
-  name: 'Specifics'
-}
-</script>
