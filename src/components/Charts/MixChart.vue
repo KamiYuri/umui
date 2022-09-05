@@ -282,7 +282,7 @@ export default {
       }
 
       this.chart.setOption({
-            backgroundColor: '#344b58',
+            backgroundColor: '#ffffff',
             title: [
               lineChart.title,
               barChart.title
@@ -346,7 +346,10 @@ export default {
             ],
           }
       )
-    }
+    },
+    getChartInstance(){
+      return this.chart
+    },
   }
 }
 

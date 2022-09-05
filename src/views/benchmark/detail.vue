@@ -1,9 +1,13 @@
 <template>
   <div class="app-container statistics">
     <el-card shadow="always">
+      <el-button style="float: right; margin-left: 10px;" class="filter-item float-right" @click.prevent="exportData">
+        Export PNG
+      </el-button>
       <h3>Bieu do thong ke Benchmark</h3>
+
       <div class="chart-container">
-        <chart height="100%" v-bind:x-data="xData" v-bind:y-data="yData" width="100%"/>
+        <chart height="100%" v-bind:x-data="xData" v-bind:y-data="yData" width="100%" ref="chart"/>
       </div>
     </el-card>
   </div>
@@ -11,12 +15,17 @@
 
 <script>
 import Chart from '@/components/Charts/MixChart'
+import waves from '@/directive/waves' // waves directive
+import RemoveErrorsMixin from 'common/RemoveErrorsMixin'
 
 export default {
   name: 'detail',
   components: {Chart},
+  directives: waves,
+  mixins: [RemoveErrorsMixin],
   data() {
     return {
+      linkList: [],
       api: [],
       xData: this.api.map(obj => obj.date),
       yData: {
@@ -25,7 +34,18 @@ export default {
       }
     }
   },
+  methods: {
+    exportData() {
+      const fileURL = window.URL.createObjectURL(new Blob([this.$refs.chart.getChartInstance().getDataURL()]));
+      const fileLink = document.createElement('a');
+      fileLink.href = fileURL
 
+      fileLink.setAttribute('download', 'chart.png')
+      document.body.appendChild(fileLink)
+
+      fileLink.click()
+    }
+  },
   beforeCreate() {
     this.api = [
       {
